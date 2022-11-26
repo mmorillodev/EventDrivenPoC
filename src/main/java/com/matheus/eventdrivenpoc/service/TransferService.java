@@ -3,6 +3,7 @@ package com.matheus.eventdrivenpoc.service;
 import com.matheus.eventdrivenpoc.domain.Transfer;
 import com.matheus.eventdrivenpoc.domain.exception.FailedToCreditIndividualAccount;
 import com.matheus.eventdrivenpoc.domain.exception.FailedToDebitSuspenseAccount;
+import com.matheus.eventdrivenpoc.infra.gateway.TransferGateway;
 import com.matheus.eventdrivenpoc.infra.repository.TransferRepository;
 import org.apache.logging.log4j.Logger;
 
@@ -22,11 +23,13 @@ public class TransferService {
     private final Logger logger = getLogger(getClass());
     private final JobScheduler jobScheduler;
     private final TransferRepository transferRepository;
+    private final TransferGateway transferGateway;
 
     @Autowired
-    TransferService(JobScheduler jobScheduler, TransferRepository transferRepository) {
+    TransferService(JobScheduler jobScheduler, TransferRepository transferRepository, TransferGateway transferGateway) {
         this.jobScheduler = jobScheduler;
         this.transferRepository = transferRepository;
+        this.transferGateway = transferGateway;
     }
 
     public void run(boolean allPass, int maxTransfers) {
@@ -62,11 +65,9 @@ public class TransferService {
     public void debitFromSuspenseAccount(int id, BigDecimal value) throws InterruptedException {
         logger.info("debiting from suspense Account: {}", id);
 
-        boolean worked = Math.random() < 0.5;
+        boolean success = transferGateway.makeRequest();
 
-        Thread.sleep(3000);
-
-        if (!worked) {
+        if (!success) {
             throw new FailedToDebitSuspenseAccount(id, value);
         }
 
@@ -79,11 +80,9 @@ public class TransferService {
     public void creditToIndividualAccount(int id, BigDecimal value) throws InterruptedException {
         logger.info("crediting to individual Account: {}", id);
 
-        boolean worked = Math.random() < 0.5;
+        boolean success = transferGateway.makeRequest();
 
-        Thread.sleep(3000);
-
-        if (!worked) {
+        if (!success) {
             throw new FailedToCreditIndividualAccount(id, value);
         }
 
